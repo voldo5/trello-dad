@@ -1,8 +1,12 @@
+import { useRef } from "react";
 import { ColumnContainer, ColumnTitle } from "./styles";
 import { useAppState } from "./state/AppStateContext";
 import { Card } from "./Card";
 import { AddNewItem } from "./AddNewItem";
-import { addTask } from "./state/actions";
+import { moveList, addTask } from "./state/actions";
+import { useItemDrag } from "./utils/useItemDrag";
+import { useDrop } from "react-dnd";
+import { isHidden } from "./utils/isHidden";
 
 type ColumnProps = {
   text: string;
@@ -10,17 +14,40 @@ type ColumnProps = {
 };
 
 export const Column = ({ text, id }: ColumnProps) => {
-  const { getTasksByListId, dispatch } = useAppState();
+  const { draggedItem, getTasksByListId, dispatch } = useAppState();
   const tasks = getTasksByListId(id);
+  //Define the ref that will hold the reference to the dragged div element
+  const ref = useRef<HTMLDivElement>(null);
+
+  const [, drop] = useDrop({
+    accept: "COLUMN",
+    hover() {
+      if (!draggedItem) {
+        return;
+      }
+      if (draggedItem.type === "COLUMN") {
+        if (draggedItem.id === id) {
+          return;
+        }
+        dispatch(moveList(draggedItem.id, id));
+      }
+    },
+  });
+
+  //Get the drag connector function from the useItemDrag
+  const { drag } = useItemDrag({ type: "COLUMN", id, text });
+  // Pass the ref to the drag function
+  //drag(ref);
+  drag(drop(ref));
 
   return (
-    <ColumnContainer>
+    <ColumnContainer ref={ref} isHidden={isHidden(draggedItem, "COLUMN", id)}>
       <ColumnTitle>{text}</ColumnTitle>
       {tasks.map((task) => (
         <Card text={task.text} key={task.id} id={task.id} />
       ))}
       <AddNewItem
-        toggleButtonText="+ Add another task"
+        toggleButtonText="+ Add another card"
         onAdd={(text) => dispatch(addTask(text, id))}
         dark
       />
