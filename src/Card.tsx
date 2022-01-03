@@ -38,7 +38,9 @@ export const Card = ({ text, id, columnId, isPreview }: CardProps) => {
       if (draggedItem.id === id) {
         return;
       }
+      //dispatch(moveTask(draggedItem.id, id, draggedItem.columnId, columnId));
       dispatch(moveTask(draggedItem.id, id, draggedItem.columnId, columnId));
+      dispatch(setDraggedItem({ ...draggedItem, columnId }));
     },
   });
 
